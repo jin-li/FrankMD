@@ -1,6 +1,12 @@
 Rails.application.routes.draw do
   root "notes#index"
 
+  # Authentication routes
+  get "login", to: "sessions#new", as: :login
+  get "logout", to: "sessions#destroy", as: :logout
+  get "auth/:provider/callback", to: "sessions#create"
+  get "auth/failure", to: "sessions#failure"
+
   # Notes API
   get "notes/tree", to: "notes#tree"
   get "notes/search", to: "notes#search"
