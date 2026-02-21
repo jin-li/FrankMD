@@ -574,6 +574,87 @@ This is useful for:
 - Edit the corrected text if needed
 - Click "Accept Changes" to apply corrections
 
+### Optional: OIDC Authentication
+
+FrankMD supports OpenID Connect (OIDC) authentication to protect your notes behind a login. When configured, users must authenticate through your organization's identity provider before accessing the app.
+
+Leave the OIDC environment variables empty to disable authentication and allow open access.
+
+#### Configuration
+
+Set these environment variables (or add to `config/fed/env.example` and source it):
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `OIDC_ISSUER` | Your OIDC provider's issuer URL (e.g., `https://accounts.google.com`) | Yes |
+| `OIDC_CLIENT_ID` | OAuth2 client ID from your provider | Yes |
+| `OIDC_CLIENT_SECRET` | OAuth2 client secret from your provider | Yes |
+| `OIDC_REDIRECT_URIS` | Callback URL (e.g., `https://yourapp.com/auth/openid_connect/callback`) | Yes |
+| `OIDC_LOGOUT_URL` | Provider's logout URL (optional, for single sign-out) | No |
+| `APP_URL` | Your application's base URL (e.g., `https://yourapp.com`) | No |
+
+**Example configuration:**
+
+```bash
+export OIDC_ISSUER="https://accounts.google.com"
+export OIDC_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+export OIDC_CLIENT_SECRET="your-client-secret"
+export OIDC_REDIRECT_URIS="https://yourapp.com/auth/openid_connect/callback"
+export APP_URL="https://yourapp.com"
+```
+
+#### Setup with Common Providers
+
+**Google:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing
+3. Enable "Google+ API"
+4. Go to Credentials → Create Credentials → OAuth 2.0 Client ID
+5. Set authorized redirect URI: `https://yourapp.com/auth/openid_connect/callback`
+6. Use issuer: `https://accounts.google.com`
+
+**Keycloak:**
+1. Create a new client in your Keycloak realm
+2. Set client protocol to `openid-connect`
+3. Set valid redirect URI: `https://yourapp.com/auth/openid_connect/callback`
+4. Use issuer: `https://your-keycloak.com/realms/your-realm`
+
+**Azure AD:**
+1. Register an application in Azure Portal
+2. Add a Web platform redirect URI: `https://yourapp.com/auth/openid_connect/callback`
+3. Create a client secret
+4. Use issuer: `https://login.microsoftonline.com/{tenant-id}/v2.0`
+
+**Okta:**
+1. Create a new Web App integration
+2. Set Sign-in redirect URI: `https://yourapp.com/auth/openid_connect/callback`
+3. Use issuer: `https://your-domain.okta.com/oauth2/default`
+
+#### Behavior
+
+- **When OIDC is NOT configured** (no `OIDC_CLIENT_ID`): The app works normally without authentication
+- **When OIDC is configured**: All routes require authentication; unauthenticated users are redirected to `/login`
+- **Session storage**: User info (email, name, uid) is stored in Rails session after successful authentication
+- **Logout**: Clicking the logout button (top-right) clears the session and optionally redirects to provider's logout URL
+
+#### Testing
+
+To test authentication in development:
+
+```bash
+# Run with authentication disabled
+bundle exec rails server
+
+# Run with authentication enabled
+OIDC_ISSUER=https://your-idp.com \
+OIDC_CLIENT_ID=your-client-id \
+OIDC_CLIENT_SECRET=your-secret \
+OIDC_REDIRECT_URIS=http://localhost:3000/auth/openid_connect/callback \
+bundle exec rails server
+```
+
+Access `http://localhost:3000` and you'll be redirected to the login page.
+
 ## Keyboard Shortcuts
 
 ### File Operations
